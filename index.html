@@ -2,15 +2,21 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-let ball = { x: 300, y: 200, dx: 3, dy: -3, radius: 10 };
+// Game State
+let gameStarted = false; // The game stays "frozen" until this is true
+let ball = { x: 300, y: 350, dx: 3, dy: -3, radius: 10 };
 let paddle = { width: 100, height: 10, x: 250, speed: 7 };
 let rightPressed = false;
 let leftPressed = false;
-let gameRunning = true; // Added to stop the loop on Game Over
 
 document.addEventListener("keydown", (e) => {
     if(e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
     if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
+    
+    // START GAME WITH SPACEBAR
+    if(e.code === "Space" && !gameStarted) {
+        gameStarted = true;
+    }
 });
 
 document.addEventListener("keyup", (e) => {
@@ -19,8 +25,6 @@ document.addEventListener("keyup", (e) => {
 });
 
 function draw() {
-    if(!gameRunning) return; // Stop drawing if game is over
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw Ball
@@ -34,27 +38,36 @@ function draw() {
     ctx.fillStyle = "#fff";
     ctx.fillRect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
 
-    // Wall Bounce (Left/Right/Top)
-    if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
-    if(ball.y + ball.dy < ball.radius) ball.dy = -ball.dy;
-    
-    // Paddle/Bottom Collision
-    if(ball.y + ball.dy > canvas.height - ball.radius) {
-        if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
-            ball.dy = -ball.dy; // Bounce off paddle
-        } else {
-            gameRunning = false;
-            alert("GAME OVER! Refresh to try again.");
-            document.location.reload();
+    if (!gameStarted) {
+        // Show instructions if game hasn't started
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.fillText("Press SPACE to Start", canvas.width/2, canvas.height/2);
+    } else {
+        // --- ONLY RUN PHYSICS IF gameStarted IS TRUE ---
+        
+        // Wall Bounce
+        if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
+        if(ball.y + ball.dy < ball.radius) ball.dy = -ball.dy;
+        
+        // Paddle Collision
+        if(ball.y + ball.dy > canvas.height - ball.radius) {
+            if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                ball.dy = -ball.dy;
+            } else {
+                alert("GAME OVER");
+                document.location.reload();
+            }
         }
+
+        ball.x += ball.dx;
+        ball.y += ball.dy;
     }
 
-    // Paddle Movement
+    // Paddle Movement (Always allow moving before start)
     if(rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
     if(leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
-
-    ball.x += ball.dx;
-    ball.y += ball.dy;
 
     requestAnimationFrame(draw);
 }
