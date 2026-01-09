@@ -1,77 +1,62 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Canvas Ball Game</title>
-    <style>
-        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #222; }
-        canvas { border: 2px solid #fff; background: #000; }
-    </style>
-</head>
-<body>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-<canvas id="gameCanvas" width="600" height="400"></canvas>
+let ball = { x: 300, y: 200, dx: 3, dy: -3, radius: 10 };
+let paddle = { width: 100, height: 10, x: 250, speed: 7 };
+let rightPressed = false;
+let leftPressed = false;
+let gameRunning = true; // Added to stop the loop on Game Over
 
-<script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
+document.addEventListener("keydown", (e) => {
+    if(e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
+    if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
+});
 
-    // Game Objects
-    let ball = { x: 300, y: 200, dx: 4, dy: 4, radius: 10 };
-    let paddle = { width: 100, height: 10, x: 250, speed: 7 };
-    let rightPressed = false;
-    let leftPressed = false;
+document.addEventListener("keyup", (e) => {
+    if(e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
+    if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
+});
 
-    // Listen for keys
-    document.addEventListener("keydown", (e) => {
-        if(e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
-        if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
-    });
-    document.addEventListener("keyup", (e) => {
-        if(e.key === "Right" || e.key === "ArrowRight") false;
-        if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
-    });
+function draw() {
+    if(!gameRunning) return; // Stop drawing if game is over
 
-    function draw() {
-        // 1. Clear the canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 2. Draw Ball
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-        ctx.fillStyle = "#00FF00";
-        ctx.fill();
-        ctx.closePath();
+    // Draw Ball
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+    ctx.fillStyle = "#00FF00";
+    ctx.fill();
+    ctx.closePath();
 
-        // 3. Draw Paddle
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
+    // Draw Paddle
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
 
-        // 4. Ball Movement & Walls
-        if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
-        if(ball.y + ball.dy < ball.radius) ball.dy = -ball.dy;
-        
-        // Paddle Collision
-        if(ball.y + ball.dy > canvas.height - ball.radius) {
-            if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
-                ball.dy = -ball.dy;
-            } else {
-                alert("GAME OVER");
-                document.location.reload();
-            }
+    // Wall Bounce (Left/Right/Top)
+    if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
+    if(ball.y + ball.dy < ball.radius) ball.dy = -ball.dy;
+    
+    // Paddle/Bottom Collision
+    if(ball.y + ball.dy > canvas.height - ball.radius) {
+        if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+            ball.dy = -ball.dy; // Bounce off paddle
+        } else {
+            gameRunning = false;
+            alert("GAME OVER! Refresh to try again.");
+            document.location.reload();
         }
-
-        // 5. Paddle Movement
-        if(rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
-        if(leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
-
-        ball.x += ball.dx;
-        ball.y += ball.dy;
-
-        // 6. The Game Loop
-        requestAnimationFrame(draw);
     }
 
-    draw();
-</script>
-</body>
-</html>
+    // Paddle Movement
+    if(rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
+    if(leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
+
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    requestAnimationFrame(draw);
+}
+
+draw();
