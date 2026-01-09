@@ -1,75 +1,99 @@
 <!DOCTYPE html>
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+<html>
+<head>
+    <title>Canvas Ball Game</title>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #222; overflow: hidden; }
+        canvas { border: 4px solid #fff; background: #000; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
 
-// Game State
-let gameStarted = false; // The game stays "frozen" until this is true
-let ball = { x: 300, y: 350, dx: 3, dy: -3, radius: 10 };
-let paddle = { width: 100, height: 10, x: 250, speed: 7 };
-let rightPressed = false;
-let leftPressed = false;
+<canvas id="gameCanvas" width="600" height="400"></canvas>
 
-document.addEventListener("keydown", (e) => {
-    if(e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
-    if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
-    
-    // START GAME WITH SPACEBAR
-    if(e.code === "Space" && !gameStarted) {
-        gameStarted = true;
-    }
-});
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-document.addEventListener("keyup", (e) => {
-    if(e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
-    if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
-});
+    // 1. Better Starting Position
+    let gameStarted = false;
+    let ball = { 
+        x: 300, 
+        y: 200,   // Starts in the middle
+        dx: 2,    // Much slower speed (2 instead of 4)
+        dy: -2,   // Moves UP first
+        radius: 10 
+    };
+    let paddle = { width: 120, height: 15, x: 240, speed: 8 };
+    let rightPressed = false;
+    let leftPressed = false;
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Keyboard Listeners
+    document.addEventListener("keydown", (e) => {
+        if(e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
+        if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
+        if(e.code === "Space") gameStarted = true; // Press Space to start
+    });
+    document.addEventListener("keyup", (e) => {
+        if(e.key === "Right" || e.key === "ArrowRight") rightPressed = false;
+        if(e.key === "Left" || e.key === "ArrowLeft") leftPressed = false;
+    });
 
-    // Draw Ball
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
-    ctx.fillStyle = "#00FF00";
-    ctx.fill();
-    ctx.closePath();
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Paddle
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(paddle.x, canvas.height - paddle.height, paddle.width, paddle.height);
+        // Draw Ball
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2);
+        ctx.fillStyle = "#00FF00";
+        ctx.fill();
+        ctx.closePath();
 
-    if (!gameStarted) {
-        // Show instructions if game hasn't started
-        ctx.font = "20px Arial";
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.fillText("Press SPACE to Start", canvas.width/2, canvas.height/2);
-    } else {
-        // --- ONLY RUN PHYSICS IF gameStarted IS TRUE ---
-        
-        // Wall Bounce
-        if(ball.x + ball.dx > canvas.width - ball.radius || ball.x + ball.dx < ball.radius) ball.dx = -ball.dx;
-        if(ball.y + ball.dy < ball.radius) ball.dy = -ball.dy;
-        
-        // Paddle Collision
-        if(ball.y + ball.dy > canvas.height - ball.radius) {
-            if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+        // Draw Paddle
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(paddle.x, canvas.height - paddle.height - 10, paddle.width, paddle.height);
+
+        if (!gameStarted) {
+            ctx.font = "24px Arial";
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.fillText("READY? PRESS SPACE TO START", canvas.width/2, canvas.height/2 + 50);
+        } else {
+            // Ball Movement
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Bounce off left/right walls
+            if(ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.dx = -ball.dx;
+            }
+            // Bounce off top
+            if(ball.y - ball.radius < 0) {
                 ball.dy = -ball.dy;
-            } else {
-                alert("GAME OVER");
-                document.location.reload();
+            }
+            
+            // Paddle Collision Logic
+            let paddleTop = canvas.height - paddle.height - 10;
+            if(ball.y + ball.radius > paddleTop) {
+                if(ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                    ball.dy = -Math.abs(ball.dy); // Force ball to go UP
+                    ball.y = paddleTop - ball.radius; // Teleport ball out of paddle to prevent sticking
+                } else if (ball.y > canvas.height) {
+                    // Actual Game Over
+                    alert("GAME OVER! Try again?");
+                    document.location.reload();
+                }
             }
         }
 
-        ball.x += ball.dx;
-        ball.y += ball.dy;
+        // Paddle Movement (Works even before start)
+        if(rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
+        if(leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
+
+        requestAnimationFrame(draw);
     }
 
-    // Paddle Movement (Always allow moving before start)
-    if(rightPressed && paddle.x < canvas.width - paddle.width) paddle.x += paddle.speed;
-    if(leftPressed && paddle.x > 0) paddle.x -= paddle.speed;
-
-    requestAnimationFrame(draw);
-}
-
-draw();
+    draw();
+</script>
+</body>
+</html>
